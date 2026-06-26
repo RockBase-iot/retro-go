@@ -44,6 +44,10 @@
 #define RG_TARGET_ODROID_GO
 #endif
 
+#ifndef RG_ENABLE_BLE_GAMEPAD
+#define RG_ENABLE_BLE_GAMEPAD 0
+#endif
+
 #ifndef RG_PROJECT_NAME
 #define RG_PROJECT_NAME "Retro-Go"
 #endif

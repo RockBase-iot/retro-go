@@ -9,6 +9,9 @@
 // Audio
 #define RG_AUDIO_USE_INT_DAC        0   // ESP32-C5 has no ESP32-style internal DAC
 #define RG_AUDIO_USE_EXT_DAC        0   // No on-board I2S DAC is documented for NM-CYD-C5
+#define RG_AUDIO_USE_BUZZER_PIN     GPIO_NUM_26
+#define RG_AUDIO_BUZZER_LEDC_CHANNEL LEDC_CHANNEL_1
+#define RG_AUDIO_BUZZER_LEDC_TIMER  LEDC_TIMER_1
 
 // Board-specific
 #define NM_CYD_C5_TOUCH_CS          GPIO_NUM_1
@@ -46,6 +49,8 @@
     ILI9341_CMD(0x01);
 
 // Input
+#define RG_ENABLE_BLE_GAMEPAD       1
+
 #if RG_ENABLE_TOUCH_GAMEPAD
 #define RG_TOUCH_XPT2046_HOST         SPI2_HOST
 #define RG_TOUCH_XPT2046_CS           NM_CYD_C5_TOUCH_CS
@@ -58,7 +63,7 @@
 #define RG_TOUCH_XPT2046_PRESSURE_MIN 80
 
 // Touch zones are expressed as screen coordinates after calibration.
-// Left side: d-pad. Right side: A/B plus menu/select/start shortcuts.
+// Left side: d-pad. Right side: A/B plus menu/options/select/start shortcuts.
 #define RG_GAMEPAD_TOUCH_MAP {\
     {RG_KEY_UP,     0,   0, 120,  70},\
     {RG_KEY_LEFT,   0,  50,  70, 170},\
@@ -66,7 +71,8 @@
     {RG_KEY_DOWN,   0, 170, 120, 239},\
     {RG_KEY_B,    170,  90, 239, 179},\
     {RG_KEY_A,    240,  90, 319, 179},\
-    {RG_KEY_MENU, 170,   0, 319,  59},\
+    {RG_KEY_MENU, 170,   0, 244,  59},\
+    {RG_KEY_OPTION,245,  0, 319,  59},\
     {RG_KEY_SELECT,140, 180, 229, 239},\
     {RG_KEY_START,230, 180, 319, 239},\
 }

@@ -1,5 +1,6 @@
 #include "rg_system.h"
 #include "rg_gui.h"
+#include "rg_ble_gamepad.h"
 
 #include <cJSON.h>
 #include <math.h>
@@ -1994,6 +1995,84 @@ static rg_gui_event_t wifi_cb(rg_gui_option_t *option, rg_gui_event_t event)
 }
 #endif
 
+#if RG_ENABLE_BLE_GAMEPAD
+static rg_gui_event_t ble_gamepad_enable_cb(rg_gui_option_t *option, rg_gui_event_t event)
+{
+    bool enabled = rg_ble_gamepad_is_enabled();
+    if (event == RG_DIALOG_PREV || event == RG_DIALOG_NEXT || event == RG_DIALOG_ENTER)
+    {
+        rg_ble_gamepad_set_enabled(!enabled);
+        return RG_DIALOG_REDRAW;
+    }
+    strcpy(option->value, enabled ? _("On") : _("Off"));
+    return RG_DIALOG_VOID;
+}
+
+static rg_gui_event_t ble_gamepad_pair_cb(rg_gui_option_t *option, rg_gui_event_t event)
+{
+    if (event == RG_DIALOG_ENTER)
+    {
+        rg_gui_alert(_("Pair controller"), _("Put the controller in Bluetooth pairing mode.\n\nFor Q36, hold Pairing until the indicator flashes quickly."));
+        rg_gui_draw_message(_("Scanning..."));
+        rg_ble_gamepad_device_t devices[RG_BLE_GAMEPAD_MAX_DEVICES] = {0};
+        int count = rg_ble_gamepad_scan(devices, RG_COUNT(devices));
+        if (count <= 0)
+        {
+            rg_gui_alert(_("BLE Gamepad"), count < 0 ? _("Scan failed.") : _("No controller found."));
+            return RG_DIALOG_REDRAW;
+        }
+
+        rg_gui_option_t device_options[RG_BLE_GAMEPAD_MAX_DEVICES + 1] = {0};
+        for (int i = 0; i < count; ++i)
+            device_options[i] = (rg_gui_option_t){i, devices[i].label, NULL, RG_DIALOG_FLAG_NORMAL, NULL};
+        device_options[count] = (rg_gui_option_t)RG_DIALOG_END;
+
+        int selected = rg_gui_dialog(_("Select controller"), device_options, 0);
+        if (selected != RG_DIALOG_CANCELLED)
+        {
+            bool ok = rg_ble_gamepad_connect_index(selected);
+            rg_gui_alert(_("BLE Gamepad"), ok ? _("Connecting to controller.") : _("Connection failed."));
+        }
+        return RG_DIALOG_REDRAW;
+    }
+    return RG_DIALOG_VOID;
+}
+
+static rg_gui_event_t ble_gamepad_forget_cb(rg_gui_option_t *option, rg_gui_event_t event)
+{
+    if (event == RG_DIALOG_ENTER && rg_gui_confirm(_("Forget controller?"), NULL, false))
+    {
+        rg_ble_gamepad_forget();
+        return RG_DIALOG_REDRAW;
+    }
+    return RG_DIALOG_VOID;
+}
+
+static rg_gui_event_t ble_gamepad_status_cb(rg_gui_option_t *option, rg_gui_event_t event)
+{
+    snprintf(option->value, 32, "%s", rg_ble_gamepad_status_text());
+    return RG_DIALOG_VOID;
+}
+
+static rg_gui_event_t ble_gamepad_cb(rg_gui_option_t *option, rg_gui_event_t event)
+{
+    if (event == RG_DIALOG_ENTER)
+    {
+        const rg_gui_option_t options[] = {
+            {0, _("Enable"),          "-",  RG_DIALOG_FLAG_NORMAL,  &ble_gamepad_enable_cb},
+            {0, _("Pair controller"), NULL, RG_DIALOG_FLAG_NORMAL,  &ble_gamepad_pair_cb},
+            {0, _("Forget controller"), NULL, RG_DIALOG_FLAG_NORMAL, &ble_gamepad_forget_cb},
+            RG_DIALOG_SEPARATOR,
+            {0, _("Status"),          "-",  RG_DIALOG_FLAG_MESSAGE, &ble_gamepad_status_cb},
+            RG_DIALOG_END,
+        };
+        rg_gui_dialog(_("BLE Gamepad"), options, 0);
+        return RG_DIALOG_REDRAW;
+    }
+    return RG_DIALOG_VOID;
+}
+#endif
+
 static rg_gui_event_t app_options_cb(rg_gui_option_t *option, rg_gui_event_t event)
 {
     if (event == RG_DIALOG_ENTER)
@@ -2034,6 +2113,9 @@ void rg_gui_options_menu(void)
         #ifdef RG_ENABLE_NETWORKING
         {0, _("Wi-Fi options"), NULL, RG_DIALOG_FLAG_NORMAL, &wifi_cb},
         #endif
+        #if RG_ENABLE_BLE_GAMEPAD
+        {0, _("BLE Gamepad"), NULL, RG_DIALOG_FLAG_NORMAL, &ble_gamepad_cb},
+        #endif
         {0, _("Launcher options"), NULL, RG_DIALOG_FLAG_NORMAL, &app_options_cb},
         RG_DIALOG_END,
     };
@@ -2068,7 +2150,11 @@ void rg_gui_options_menu(void)
 void rg_gui_about_menu(void)
 {
     const rg_app_t *app = rg_system_get_app();
+#if defined(RG_TARGET_NM_CYD_C5)
+    bool have_option_btn = false;
+#else
     bool have_option_btn = rg_input_key_is_present(RG_KEY_OPTION);
+#endif
 
     // TODO: Add indicator whether or not the build is a release, and if it's official (built by me)
     rg_gui_option_t options[20] = {
@@ -2275,7 +2361,11 @@ int rg_gui_savestate_menu(const char *title, const char *rom_path)
 void rg_gui_game_menu(void)
 {
     const char *rom_path = rg_system_get_app()->romPath;
+#if defined(RG_TARGET_NM_CYD_C5)
+    bool have_option_btn = false;
+#else
     bool have_option_btn = rg_input_key_is_present(RG_KEY_OPTION);
+#endif
     const rg_gui_option_t choices[] = {
         {1000, _("Save & Continue"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {2000, _("Save & Quit"),     NULL, RG_DIALOG_FLAG_NORMAL, NULL},

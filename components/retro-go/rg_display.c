@@ -5,6 +5,8 @@
 #include <string.h>
 
 #define LCD_BUFFER_LENGTH (RG_SCREEN_WIDTH * 4) // In pixels
+#define DISPLAY_SYNC_WARN_US 100000
+#define DISPLAY_SYNC_WARN_INTERVAL_US 500000
 
 // static rg_display_driver_t driver;
 static rg_task_t *display_task_queue;
@@ -511,8 +513,26 @@ void rg_display_submit(const rg_surface_t *update, uint32_t flags)
 
 bool rg_display_sync(bool block)
 {
+    int64_t start = 0;
+    int64_t next_warn = 0;
+
     while (block && rg_task_messages_waiting(display_task_queue))
-        continue; // We should probably yield?
+    {
+        int64_t now = rg_system_timer();
+        if (!start)
+        {
+            start = now;
+            next_warn = start + DISPLAY_SYNC_WARN_US;
+        }
+        else if (now >= next_warn)
+        {
+            RG_LOGW("Display sync waiting %lldms, pending=%u",
+                (long long)((now - start) / 1000),
+                (unsigned)rg_task_messages_waiting(display_task_queue));
+            next_warn = now + DISPLAY_SYNC_WARN_INTERVAL_US;
+        }
+        rg_task_delay(1);
+    }
     return !rg_task_messages_waiting(display_task_queue);
 }
 

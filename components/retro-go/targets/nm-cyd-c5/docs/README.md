@@ -12,7 +12,8 @@
 # Known issues
 - Requires ESP-IDF 5.5 or newer for ESP32-C5 support.
 - The on-board XPT2046 touch controller is mapped to virtual gamepad zones. It is single-touch, so it is usable for launcher navigation and basic testing but does not replace a physical multi-button gamepad.
-- Touch layout in landscape mode: left side is the d-pad, right middle is B/A, top-right is Menu, bottom-right is Select/Start.
+- Touch layout in landscape mode: left side is the d-pad, right middle is B/A, top-right is Menu/Options, bottom-right is Select/Start.
 - Set `RG_ENABLE_TOUCH_GAMEPAD` to `0` in the target config to disable the virtual touch buttons entirely.
+- BLE HID Gamepad is enabled for external Bluetooth controllers. Use `Options -> BLE Gamepad -> Pair controller`, then put the controller in Bluetooth pairing mode. Shanwan Q36 validation uses the manual flow: hold Pairing until the indicator flashes quickly.
 - Audio defaults to the dummy sink because the board documentation does not list an on-board DAC or speaker.
 - The single-core CPU has less scheduling headroom than existing dual-core ESP32/S3 targets; start with `launcher` and `retro-core` before testing heavier applications.

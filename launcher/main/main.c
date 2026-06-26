@@ -203,7 +203,7 @@ static void retro_loop(void)
     gui_init(app->isColdBoot);
     applications_init();
     bookmarks_init();
-    // browser_init();
+    browser_init();
 
 #ifdef RG_ENABLE_NETWORKING
     rg_network_init();

@@ -7,6 +7,9 @@ elseif(IDF_VERSION_MAJOR EQUAL 5) # esp-idf 5.0 - 5.2
 else() # esp-idf 4.1 - 4.4
     set(COMPONENT_REQUIRES "spi_flash fatfs app_update esp_adc_cal json nvs_flash esp_wifi esp_http_client")
 endif()
+if(IDF_TARGET STREQUAL "esp32c5")
+    set(COMPONENT_REQUIRES "${COMPONENT_REQUIRES} bt esp_hid")
+endif()
 
 register_component()
 

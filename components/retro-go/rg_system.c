@@ -1,4 +1,7 @@
 #include "rg_system.h"
+#if RG_ENABLE_BLE_GAMEPAD
+#include "rg_ble_gamepad.h"
+#endif
 
 #include <sys/time.h>
 #include <stdarg.h>
@@ -476,6 +479,16 @@ rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_u
     rg_display_init();
     rg_input_late_init();
     rg_gui_init();
+
+#if RG_ENABLE_BLE_GAMEPAD
+    if (rg_ble_gamepad_is_enabled())
+    {
+        rg_gui_draw_message("Searching BLE controller...");
+        bool connected = rg_ble_gamepad_startup_connect();
+        rg_gui_draw_message(connected ? "BLE controller connected" : "BLE controller not connected");
+        rg_task_delay(connected ? 1500 : 2000);
+    }
+#endif
 
     if (enterRecoveryMode)
     {

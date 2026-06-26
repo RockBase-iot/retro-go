@@ -1,5 +1,6 @@
 #include "rg_system.h"
 #include "rg_input.h"
+#include "rg_ble_gamepad.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -343,6 +344,10 @@ bool rg_input_read_gamepad_raw(uint32_t *out)
     }
 #endif
 
+#if RG_ENABLE_BLE_GAMEPAD
+    state |= rg_ble_gamepad_read();
+#endif
+
     if (out)
         *out = state;
     return true;
@@ -501,6 +506,11 @@ void rg_input_init(void)
 
 void rg_input_late_init(void)
 {
+#if RG_ENABLE_BLE_GAMEPAD
+    RG_LOGI("Initializing BLE gamepad driver...");
+    rg_ble_gamepad_init();
+#endif
+
 #if defined(RG_GAMEPAD_TOUCH_MAP) && defined(RG_INPUT_USE_XPT2046)
     if (!touch_dev)
     {
@@ -521,6 +531,9 @@ void rg_input_late_init(void)
 void rg_input_deinit(void)
 {
     input_task_running = false;
+#if RG_ENABLE_BLE_GAMEPAD
+    rg_ble_gamepad_deinit();
+#endif
 #if defined(RG_INPUT_USE_XPT2046)
     if (touch_dev)
     {
